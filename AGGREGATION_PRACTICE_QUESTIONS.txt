@@ -1,0 +1,553 @@
+1.HOW MANY USERS ARE ACTIVE?
+
+[
+  {
+    $match:{ //to find an exact match with the specified field
+       isActive:true,
+    }
+  },
+  {
+    $count:"activeUsers"
+  }
+]
+
+
+
+
+2.WHAT IS THE AVERAGE AGE OF ALL USERS?
+
+i)FOR THE WHOLE DOCUMENT
+
+[
+  {
+    $group: {
+      _id:null,
+      averageAge:{
+        $avg:"$age"
+      }
+    }
+  }
+]
+
+OUTPUT:
+
+{
+  "_id": null,
+  "averageAge": 29.835
+}
+
+
+ii)GROUP BASED ON GENDER
+
+[
+  {
+    $group: {
+      _id:"$gender,
+      averageAge:{
+        $avg:"$age"
+      }
+    }
+  }
+]
+
+OUTPUT:
+
+{
+  "_id": "female",
+  "averageAge": 29.81854043392505
+}
+
+{
+  "_id": "male",
+  "averageAge": 29.851926977687626
+}
+
+
+
+
+
+3.LIST THE TOP 5 MOST COMMON FAVOURITE FRUITS AMONG USERS
+
+[
+  {
+    $group: {
+      _id: "$favoriteFruit",
+      count:{
+         $sum:1
+      }
+    },
+  },
+  {
+    $sort:{
+      count:-1 //-1 sort in descending order , 1 sort in ascending order
+    }
+  },
+  {
+    $limit:5
+  }
+]
+
+OUTPUT:
+
+{
+  "_id": "banana",
+  "count": 339
+}
+
+{
+  "_id": "apple",
+  "count": 338
+}
+
+{
+  "_id": "strawberry",
+  "count": 323
+}
+
+
+
+4.FIND THE TOTAL NUMBER OF MALES AND FEMALES.
+
+[
+  {
+    $group: {
+      _id:"$gender",
+      count:{
+        $sum:1
+      }
+    }
+  }
+]
+
+OUTPUT:
+
+{
+  "_id": "male",
+  "count": 493
+}
+
+{
+  "_id": "female",
+  "count": 507
+}
+
+
+
+5.WHICH COUNTRY HAS THE HIGHEST NUMBER OF REGISTERED USERS
+
+[
+  {
+    $group: {
+      _id: "$company.location.country", //drilling through each fields
+      count:{
+        $sum:1
+      }
+    },
+  },
+  {
+    $sort:{
+       count:-1,
+    }
+  },
+  {
+    $limit:1
+  }
+]
+
+
+
+6.LIST ALL THE UNIQUE EYE COLORS PRESENT IN THE COLLECTION
+
+[
+  {
+    $group: {
+      _id: "$company.location.country",
+      count:{
+        $sum:1
+      }
+    },
+  },
+  {
+    $sort:{
+       count:-1,
+    }
+  },
+  {
+    $limit:1
+  }
+]
+
+OUTPUT:
+
+{
+  "_id": "blue"
+}
+{
+  "_id": "brown"
+}
+{
+  "_id": "green"
+}
+
+
+7.AVERAGE NUMBER OF TAGS PER USER:
+
+
+[
+  {
+    $unwind:"$tags" //unwind is an mongodb operator it is used to deconstruct an array in a way that creating separate documents for each element in the array
+  },
+  {
+    $group:{
+      _id:"$_id", //group them based on their id
+      tagsCount:{
+        $sum:1 //find count
+      }
+    }
+  },
+  {
+    $group:{
+      _id:null, //group the whole document into an single document
+      average:{
+        $avg:"$tagsCount"  //find avergae
+      }
+    }
+  }
+]
+
+
+alternative:
+
+
+[
+  {
+    $addFields: {
+      numberOfTags:{
+        $size:{
+          $ifNull:["$tags",[]]
+        }
+      }
+    }
+  }
+  ,{
+    $group: {
+      _id:null,
+      average:{
+        $avg:"$numberOfTags"
+      }
+    }
+  }
+]
+
+
+OUTPUT:
+
+{
+  "_id": null,
+  "average": 3.556
+}
+
+
+8.HOW MANY USERS HAVE ENIM AS ONE OF THEIR TAGS
+
+[
+  {
+    $match: {
+      tags:"enim"
+    }
+  },
+  {
+    $count:"enimTagCount"
+  }
+]
+
+OUTPUT:
+
+{
+  "enimTagCount": 62
+}
+
+
+
+9.DISPLAY THE AGE AND NAME OF THE USERS WHO HAVE VELIT AS TAG NAME AND INACTIVE
+
+
+[
+  {
+    $match: {
+      tags:"velit",
+      isActive:false
+    }
+  },
+  {
+    $project: {
+      name:1,
+      age:1
+    }
+  }
+]
+
+
+OUTPUT:
+
+{
+  "_id": {
+    "$oid": "67b1818d35a1c7d6c8c59f76"
+  },
+  "name": "Mcclure Potter",
+  "age": 39
+}
+
+
+
+10)HOW MANY USERS HAVE A PHONE NUMBER STARTING WITH +1 (940)?
+
+[
+  {
+    $match: {
+      "company.phone":/^\+1 \(940\)/
+    }
+  },
+  {
+    $count:"users_phone_startingwith +1 (940)"
+  }
+]
+
+OUTPUT:
+
+{
+  "users_phone_startingwith +1 (940)": 5
+}
+
+
+
+11)WHO HAS REGISTERED MORE RECENTLY?
+
+[
+  {
+    $sort: {
+      registered:-1
+    }
+  },
+  {
+    $limit: 1
+  },
+  {
+    $project: {
+      name:1,
+      registered:1
+    }
+  }
+]
+
+OUTPUT:
+
+{
+  "_id": {
+    "$oid": "67b1818d35a1c7d6c8c5a16d"
+  },
+  "name": "Stephenson Griffith",
+  "registered": {
+    "$date": "2018-04-14T03:16:20.000Z"
+  }
+}
+
+
+12)CATEGORIZE USERS BY THEIR FAVOURITE FRUIT
+
+
+[
+  {
+    $group: {
+      _id:"$favoriteFruit",
+      Users:{
+        $push:"$name"
+      }
+    }
+  }
+]
+
+OUTPUT:
+
+{
+  "_id": "apple",
+  "Users": [
+    "Santana Preston",
+    "Loretta Pace",
+    "Melton Carrillo",
+    "Pace Irwin",
+    "Rosa Cohen",
+    "Danielle Justice",
+    "Emily Moreno",
+    "Roy Dotson",
+    "Haney Mendoza",
+    "Brooke Bonner",
+    "Kennedy Bullock",
+    "Hurley Patton",
+    "Lora Bowers",
+    "Susana Watson",
+    "Madelyn Britt",
+    "Lydia Bauer",
+    "Boyer Norman",
+    "Megan Maldonado",
+    "Janette Odom",
+    "Mavis Leach",
+    "Kimberley Chase",
+    "Dotson Hatfield",
+    "Randi Crosby",
+    "Rhodes Mclean",
+    "Carney Nguyen",
+    "Fowler Blevins",
+    "Diane Daugherty",
+    "Sandy Dejesus",
+    "Johns Dyer",
+    "Leigh Patel",
+    "Martin Ruiz",
+    "Brittany Schneider",
+    "Williamson Kirkland",
+    "Bertha Shaw",
+    "Lenora Stokes",
+    "Fulton Diaz",
+    "Holloway Hughes",
+    "Holmes Murray",
+    "Cantrell Parsons",
+    "Ebony Powers"
+  ]
+}
+
+
+13)HOW MANY NUMBER OF USERS ARE HAVING 2ND TAG AS AD?
+
+
+[
+  {
+    $match: {
+      "tags.1":"ad",
+    }
+  },{
+    $count: "users with 2nd tag as AD"
+  }
+]
+
+OUTPUT:
+
+{
+  "users with 2nd tag as AD": 12
+}
+
+
+14.FIND USERS WHO HAVE ID AND ENIM AS THEIR TAGS.
+
+[
+  {
+    $match: {
+      tags:"id",
+      tags:"enim"
+    }
+  },
+  {
+    $project: {
+      name:1,
+      tags:1
+    }
+  }
+]
+
+
+alternative:
+
+[
+  {
+    $match: {
+      tags: {
+        $all: ["enim","id"],
+      }
+    }
+  }
+]
+
+OUTPUT:
+
+{
+  "_id": {
+    "$oid": "67b1818d35a1c7d6c8c59ebc"
+  },
+  "name": "Lupe Barry",
+  "tags": [
+    "enim",
+    "deserunt",
+    "ea",
+    "mollit",
+    "commodo"
+  ]
+}
+
+
+15.LIST ALL THE COMPANIES LOCATED IN USA ALONG WITH THEIR CORRESPONDING USER COUNT
+
+[
+  {
+    $match: {
+      "company.location.country":"USA"
+      
+    }
+  },
+  {
+    $group: {
+      _id:null,
+      count:{
+        $sum:1
+      }
+    }
+  },
+]
+
+OUTPUT:
+
+{
+  "_id": null,
+  "count": 255
+}
+
+
+16.LOOKUP THE FIRST MATCHED AUTHOR:
+
+THE LOOKUP STAGE IN AGGREGATION PIPELINE IS USED FOR PERFORMING LEFT OUTER JOIN BTW TWO COLLECTIONS.
+IT IS USED TO FETCH RELATED DATA FROM OTHER COLLECTION BASED ON A COMMON FIELD
+
+[
+  {
+    $lookup: {
+      from: "authors",
+      localField:"author_id",
+      foreignField: "_id",
+      as: "authorDetails"
+    }
+  },
+  {
+    $addFields: {
+      authorDetails:{
+        $first:"$authorDetails" // extracts only the first element of the specified array and replace the elements with this eg if contains 2 elements it replaces the whole 2elements with the 1 element
+      }
+    }
+  }
+]
+
+
+[
+  {
+    $lookup: {
+      from: "authors",
+      localField:"author_id",
+      foreignField: "_id",
+      as: "authorDetails"
+    }
+  },
+  {
+    $addFields: {
+      authorDetails:{
+        $arrayElemAt:["$authorDetails",9] //extracts the elements specified in the index if the specified index not present then i will remove the field authorDetails if present then replace the whole element with the element specified in the index.
+      }
+    }
+  }
+]
